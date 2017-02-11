@@ -1,5 +1,6 @@
 ﻿// adapted from http://www.blakepell.com/2013-07-26-naudio-loopback-record-what-you-hear-through-the-speaker
 
+using System;
 using System.Diagnostics;
 using NAudio.Wave;
 
@@ -10,8 +11,12 @@ namespace HueAudioSync
     /// </summary>
     public class LoopbackRecorder
     {
-        private IWaveIn _waveIn;
+        public static int FftLength { get; } = 8192;
+
         private bool _isRecording;
+        private IWaveIn _waveIn;
+        private SampleAggregator _sampleAggregator;
+        //private WaveFileWriter _writer;
 
         /// <summary>
         /// Starts the recording.
@@ -24,9 +29,18 @@ namespace HueAudioSync
                 return;
             }
             _waveIn = new WasapiLoopbackCapture();
+
+            _sampleAggregator = new SampleAggregator(FftLength);
+            _sampleAggregator.FftCalculated += FftCalculated;
+            _sampleAggregator.PerformFFT = true;
+
+            //Debug.WriteLine(WasapiLoopbackCapture.GetDefaultLoopbackCaptureDevice().FriendlyName);
+            //_writer = new WaveFileWriter("C:\\users\\adams\\downloads\\test.wav", _waveIn.WaveFormat);
+
             _waveIn.DataAvailable += OnDataAvailable;
             _waveIn.RecordingStopped += OnRecordingStopped;
             _waveIn.StartRecording();
+
             _isRecording = true;
         }
 
@@ -48,7 +62,7 @@ namespace HueAudioSync
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void OnRecordingStopped(object sender, StoppedEventArgs e)
+        public void OnRecordingStopped(object sender, StoppedEventArgs e)
         {
             if (_waveIn != null)
             {
@@ -67,21 +81,39 @@ namespace HueAudioSync
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void OnDataAvailable(object sender, WaveInEventArgs e)
+        private void OnDataAvailable(object sender, WaveInEventArgs e)
         {
-            Debug.WriteLine(e.BytesRecorded);
+            //Debug.WriteLine(e.BytesRecorded);
+            //_writer.Write(e.Buffer, 0, e.BytesRecorded);
+
+            //var buffer = e.Buffer;
+            //var bytesRecorded = e.BytesRecorded;
+            //var bufferIncrement = _waveIn.WaveFormat.BlockAlign;
+
+            //for (var index = 0; index < bytesRecorded; index += bufferIncrement)
+            //{
+            //    var sample32 = BitConverter.ToSingle(buffer, index);
+            //    if (sample32 > 0)
+            //    {
+            //        Debug.WriteLine(sample32);
+            //    }
+            //}
+
+            var buffer = e.Buffer;
+            var bytesRecorded = e.BytesRecorded;
+            var bufferIncrement = _waveIn.WaveFormat.BlockAlign;
+
+            for (var index = 0; index < bytesRecorded; index += bufferIncrement)
+            {
+                var sample32 = BitConverter.ToSingle(buffer, index);
+                _sampleAggregator.Add(sample32);
+            }
         }
 
-        private string _fileName = "";
-        /// <summary>
-        /// The name of the file that was set when StartRecording was called.  E.g. the current file being written to.
-        /// </summary>
-        public string FileName
+        private void FftCalculated(object sender, FftEventArgs e)
         {
-            get
-            {
-                return _fileName;
-            }
+            // Do something with e.result!
+            Debug.WriteLine("x: {0}, y: {1}", e.Result[e.Result.Length - 1].X, e.Result[e.Result.Length - 1].Y);
         }
     }
 }

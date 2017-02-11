@@ -3,9 +3,9 @@ using System.Windows.Forms;
 
 namespace HueAudioSync
 {
-    internal static class Program
+    internal class Program
     {
-        private static LoopbackRecorder _recorder;
+        private readonly LoopbackRecorder _recorder;
 
         /// <summary>
         /// The main entry point for the application.
@@ -17,15 +17,22 @@ namespace HueAudioSync
             Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
 
+            var program = new Program();
+        }
+
+        public Program()
+        {
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+
+            var formController = new FormController();
 
             _recorder = new LoopbackRecorder();
             _recorder.StartRecording();
         }
 
-        private static void OnProcessExit(object sender, EventArgs e)
+        private void OnProcessExit(object sender, EventArgs e)
         {
-            _recorder.StopRecording();
+            _recorder?.StopRecording();
         }
     }
 }
