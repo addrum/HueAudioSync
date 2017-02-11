@@ -1,0 +1,11 @@
+c:\users\adams\documents\GitHub\HueAudioSync\HueAudioSync\HueAudioSync\bin\Debug\HueAudioSync.exe.config
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\bin\Debug\HueAudioSync.exe.config
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\bin\Debug\HueAudioSync.exe
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\bin\Debug\HueAudioSync.pdb
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\bin\Debug\NAudio.dll
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\bin\Debug\NAudio.xml
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\obj\Debug\HueAudioSync.csprojResolveAssemblyReference.cache
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\obj\Debug\HueAudioSync.Properties.Resources.resources
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\obj\Debug\HueAudioSync.csproj.GenerateResource.Cache
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\obj\Debug\HueAudioSync.exe
+C:\Users\adams\Documents\GitHub\HueAudioSync\HueAudioSync\obj\Debug\HueAudioSync.pdb
