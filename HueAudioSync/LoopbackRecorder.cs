@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using NAudio.Wave;
+using VoiceRecorder.Audio;
 
 namespace HueAudioSync
 {
@@ -30,9 +31,7 @@ namespace HueAudioSync
             }
             _waveIn = new WasapiLoopbackCapture();
 
-            _sampleAggregator = new SampleAggregator(FftLength);
-            _sampleAggregator.FftCalculated += FftCalculated;
-            _sampleAggregator.PerformFFT = true;
+            _sampleAggregator = new SampleAggregator();
 
             //Debug.WriteLine(WasapiLoopbackCapture.GetDefaultLoopbackCaptureDevice().FriendlyName);
             //_writer = new WaveFileWriter("C:\\users\\adams\\downloads\\test.wav", _waveIn.WaveFormat);
@@ -83,37 +82,42 @@ namespace HueAudioSync
         /// <param name="e"></param>
         private void OnDataAvailable(object sender, WaveInEventArgs e)
         {
-            //Debug.WriteLine(e.BytesRecorded);
-            //_writer.Write(e.Buffer, 0, e.BytesRecorded);
-
-            //var buffer = e.Buffer;
-            //var bytesRecorded = e.BytesRecorded;
-            //var bufferIncrement = _waveIn.WaveFormat.BlockAlign;
-
-            //for (var index = 0; index < bytesRecorded; index += bufferIncrement)
-            //{
-            //    var sample32 = BitConverter.ToSingle(buffer, index);
-            //    if (sample32 > 0)
-            //    {
-            //        Debug.WriteLine(sample32);
-            //    }
-            //}
-
             var buffer = e.Buffer;
-            var bytesRecorded = e.BytesRecorded;
-            var bufferIncrement = _waveIn.WaveFormat.BlockAlign;
+            float sample32 = 0;
 
-            for (var index = 0; index < bytesRecorded; index += bufferIncrement)
+            for (var index = 0; index < e.BytesRecorded; index += 2)
             {
-                var sample32 = BitConverter.ToSingle(buffer, index);
+                var sample = (short)((buffer[index + 1] << 8) | buffer[index + 0]);
+                sample32 = sample / 32768f;
+                Debug.WriteLine(sample32);
+                LightsController.SetLights(Convert.ToByte(Math.Abs(sample32) * 255));
                 _sampleAggregator.Add(sample32);
             }
+            var floats = BytesToFloats(buffer);
+
+            var pitchDetect = new FftPitchDetector(sample32);
+            var pitch = pitchDetect.DetectPitch(floats, floats.Length);
+            Debug.WriteLine($"Pitch {pitch}");
         }
 
-        private void FftCalculated(object sender, FftEventArgs e)
+        private static float[] BytesToFloats(byte[] bytes)
         {
-            // Do something with e.result!
-            Debug.WriteLine("x: {0}, y: {1}", e.Result[e.Result.Length - 1].X, e.Result[e.Result.Length - 1].Y);
+            var floats = new float[bytes.Length / 2];
+            for (var i = 0; i < bytes.Length; i += 2)
+            {
+                floats[i / 2] = bytes[i] | (bytes[i + 1] << 8);
+            }
+
+            return floats;
         }
+
+        //// http://stackoverflow.com/a/20414331/1860436
+        //private void FftCalculated(object sender, FftEventArgs e)
+        //{
+        //    var x = e.Result[e.Result.Length - 1].X;
+        //    var y = e.Result[e.Result.Length - 1].Y;
+        //    Debug.WriteLine($"x: {x}, y: {y}");
+        //    LightsController.SetLights(x* 100, y * 100);
+        //}
     }
 }

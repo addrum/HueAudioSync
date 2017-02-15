@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Windows.Forms;
+using SharpHue;
 
 namespace HueAudioSync
 {
     internal class Program
     {
-        private readonly LoopbackRecorder _recorder;
+        private static LoopbackRecorder _recorder;
 
         /// <summary>
         /// The main entry point for the application.
@@ -17,20 +20,16 @@ namespace HueAudioSync
             Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
 
-            var program = new Program();
-        }
-
-        public Program()
-        {
-            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-
             var formController = new FormController();
+
+            var bridgeConnector = new BridgeConnector();
 
             _recorder = new LoopbackRecorder();
             _recorder.StartRecording();
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
         }
 
-        private void OnProcessExit(object sender, EventArgs e)
+        private static void OnProcessExit(object sender, EventArgs e)
         {
             _recorder?.StopRecording();
         }

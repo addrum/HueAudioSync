@@ -1,68 +1,53 @@
 ﻿using System;
 using System.Diagnostics;
-using NAudio.Dsp;
 
-// http://stackoverflow.com/a/20414331/1860436
-namespace HueAudioSync
-{ // The Complex and FFT are here!
-
-    internal class SampleAggregator
+namespace VoiceRecorder.Audio
+{
+    public class SampleAggregator
     {
-        // FFT
-        public event EventHandler<FftEventArgs> FftCalculated;
-        // ReSharper disable once InconsistentNaming
-        public bool PerformFFT { get; set; }
+        public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
+        public event EventHandler Restart = delegate { };
+        private float maxValue;
+        private float minValue;
+        public int NotificationCount { get; set; }
+        int count;
 
-        // This Complex is NAudio's own! 
-        private Complex[] _fftBuffer;
-        private FftEventArgs _fftArgs;
-        private int _fftPos;
-        private int _fftLength;
-        private int _m;
-
-        public SampleAggregator(int fftLength)
+        public void RaiseRestart()
         {
-            if (!IsPowerOfTwo(fftLength))
-            {
-                throw new ArgumentException("FFT Length must be a power of two");
-            }
-            _m = (int)Math.Log(fftLength, 2.0);
-            _fftLength = fftLength;
-            _fftBuffer = new Complex[fftLength];
-            _fftArgs = new FftEventArgs(_fftBuffer);
+            Restart(this, EventArgs.Empty);
         }
 
-        private bool IsPowerOfTwo(int x)
+        private void Reset()
         {
-            return (x & (x - 1)) == 0;
+            count = 0;
+            maxValue = minValue = 0;            
         }
 
         public void Add(float value)
         {
-            if (PerformFFT && FftCalculated != null)
+            maxValue = Math.Max(maxValue, value);
+            minValue = Math.Min(minValue, value);
+            count++;
+            if (count >= NotificationCount && NotificationCount > 0)
             {
-                // Remember the window function! There are many others as well.
-                _fftBuffer[_fftPos].X = (float)(value * FastFourierTransform.HammingWindow(_fftPos, _fftLength));
-                _fftBuffer[_fftPos].Y = 0; // This is always zero with audio.
-                _fftPos++;
-
-                if (_fftPos >= _fftLength)
+                if (MaximumCalculated != null)
                 {
-                    _fftPos = 0;
-                    FastFourierTransform.FFT(true, _m, _fftBuffer);
-                    FftCalculated(this, _fftArgs);
+                    MaximumCalculated(this, new MaxSampleEventArgs(minValue, maxValue));
                 }
-            }
+                Reset();
+            }   
         }
     }
 
-    public class FftEventArgs : EventArgs
+    public class MaxSampleEventArgs : EventArgs
     {
         [DebuggerStepThrough]
-        public FftEventArgs(Complex[] result)
+        public MaxSampleEventArgs(float minValue, float maxValue)
         {
-            Result = result;
+            MaxSample = maxValue;
+            MinSample = minValue;
         }
-        public Complex[] Result { get; private set; }
+        public float MaxSample { get; private set; }
+        public float MinSample { get; private set; }
     }
 }
