@@ -85,9 +85,9 @@ namespace HueAudioSync
             var buffer = e.Buffer;
             float sample32 = 0;
 
-            for (var index = 0; index < e.BytesRecorded; index += 2)
+            for (var index = buffer.Length > 1024 ? buffer.Length - 1024 : buffer.Length; index < e.BytesRecorded; index += 2)
             {
-                var sample = (short)((buffer[index + 1] << 8) | buffer[index + 0]);
+                var sample = (short) ((buffer[index + 1] << 8) | buffer[index + 0]);
                 sample32 = sample / 32768f;
                 Debug.WriteLine(sample32);
                 LightsController.SetLights(Convert.ToByte(Math.Abs(sample32) * 255));
